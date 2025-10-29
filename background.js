@@ -213,12 +213,19 @@ async function runExport({ tabId, address, limit = 100 }) {
       if (sym) tokenSymbols.set(mint, sym);
     }
 
+    const beforeCount = allTxs.length;
     for (const tx of txs) {
       const key = `${tx.signature}|${tx.owner}`;
       if (!seen.has(key)) {
         seen.add(key);
         allTxs.push(tx);
       }
+    }
+    const newCount = allTxs.length - beforeCount;
+
+    if (newCount === 0) {
+      console.log(`[bg] No new transactions found on page ${page}, all ${txs.length} were duplicates. Export complete.`);
+      break;
     }
 
     before = txs[txs.length - 1].signature;
@@ -227,11 +234,11 @@ async function runExport({ tabId, address, limit = 100 }) {
       cmd: "progress",
       tabId,
       page,
-      fetched: txs.length,
+      fetched: newCount,
       total: allTxs.length
     }).catch(() => {});
 
-    await reportProgress(`Fetched page ${page} (+${txs.length}, total ${allTxs.length})`);
+    await reportProgress(`Fetched page ${page} (+${newCount}, total ${allTxs.length})`);
     await sleep(120);
   }
 
