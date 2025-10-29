@@ -282,17 +282,19 @@ async function runExport({ tabId, address, limit = 100 }) {
 
   console.log(`[bg] CSV generated: ${lines.length} lines`);
 
+  const dataUrl = "data:text/csv;charset=utf-8," + encodeURIComponent(csvText);
+  console.log("[bg] Triggering download...");
+  
   try {
-    await chrome.runtime.sendMessage({
-      cmd: "download",
-      csvText,
-      filename
+    const downloadId = await chrome.downloads.download({ 
+      url: dataUrl, 
+      filename, 
+      saveAs: true 
     });
-    await sleep(500);
+    console.log(`[bg] Download started with ID: ${downloadId}`);
   } catch (e) {
-    console.warn("[bg] Offscreen download failed, using data URL fallback:", e);
-    const dataUrl = "data:text/csv;charset=utf-8," + encodeURIComponent(csvText);
-    await chrome.downloads.download({ url: dataUrl, filename, saveAs: true });
+    console.error("[bg] Download failed:", e);
+    throw new Error(`Download failed: ${e.message}`);
   }
 
   await closeOffscreen();
