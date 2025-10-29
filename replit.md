@@ -18,12 +18,12 @@ Preferred communication style: Simple, everyday language.
 
 **Components**:
 - **Popup UI** (`popup.html`, `popup.js`, `popup.css`): User interface for initiating exports and displaying diagnostics
-- **Content Script** (`content.js`): Injects bridge script into page context
-- **Bridge Script** (`bridge.js`): Runs in page world, intercepts `fetch()` calls to capture authentication headers
+- **Content Script** (`content.js`): Injects inline bridge code into page context at `document_start`
+- **Bridge Code** (embedded in `content.js`): Runs in page world, intercepts `fetch()` calls to capture authentication headers
 - **Background Service Worker** (`background.js`): Orchestrates the export process, handles API pagination, and manages downloads
 - **Offscreen Document** (`offscreen.html`, `offscreen.js`): Keeps service worker alive during long-running operations and handles blob creation for downloads
 
-**Rationale**: MV3 service workers have limited lifetime, and content scripts cannot access page-level authentication. The bridge pattern solves both issues by running code in the page's JavaScript context while maintaining secure communication with the extension.
+**Rationale**: MV3 service workers have limited lifetime, and content scripts cannot access page-level authentication. The inline bridge pattern ensures the fetch wrapper is installed BEFORE Jupiter's page scripts load and save their own reference to fetch, solving the timing issue while maintaining secure communication with the extension.
 
 ### Authentication Header Capture
 
@@ -32,16 +32,20 @@ Preferred communication style: Simple, everyday language.
 **Solution**: Wrapper pattern around `window.fetch` in page world that intercepts API calls and extracts headers.
 
 **Implementation**:
-1. Content script injects `bridge.js` into page's JavaScript context
-2. Bridge wraps `window.fetch` and monitors requests to `portfolio-api-jup.sonar.watch`
-3. When target request detected, headers are extracted and sent via `postMessage` to content script
-4. Content script stores headers in `chrome.storage.local` with timestamp
+1. Content script runs at `document_start` and injects bridge code inline via `script.textContent`
+2. Inline bridge code executes immediately before page scripts, wrapping `window.fetch` 
+3. Bridge monitors requests to `portfolio-api-jup.sonar.watch` and captures headers on first matching request
+4. When target request detected, headers are extracted and sent via `postMessage` to content script
+5. Content script stores headers in `chrome.storage.local` with timestamp
+
+**Critical Timing**: Inline injection at `document_start` ensures the fetch wrapper is installed before Jupiter's page scripts can save their own reference to the original `fetch` function, preventing timing-related capture failures.
 
 **Alternatives considered**: 
-- WebRequest API blocking (deprecated in MV3, removed from implementation)
-- Declarative Net Request (cannot capture dynamic tokens)
+- Separate bridge.js file loaded via `chrome.runtime.getURL()` - rejected due to async loading delay
+- WebRequest API blocking - deprecated in MV3
+- Declarative Net Request - cannot capture dynamic tokens
 
-**Pros**: Works with dynamic tokens, MV3 compliant, minimal permissions
+**Pros**: Works with dynamic tokens, MV3 compliant, minimal permissions, timing-reliable
 **Cons**: Requires user to trigger at least one "Load more" action to capture headers
 
 ### Background Export Process

@@ -41,8 +41,8 @@ If headers aren't ready, click "Load more" once on the Jupiter site.
 
 ## How It Works
 
-1. **Content script** (`content.js`) injects a **bridge script** into the page
-2. **Bridge script** (`bridge.js`) wraps `window.fetch` in page context to capture auth headers
+1. **Content script** (`content.js`) injects inline bridge code into the page at `document_start`
+2. **Bridge code** (embedded in `content.js`) wraps `window.fetch` in page context to capture auth headers
 3. **Background service worker** (`background.js`) handles the export:
    - Paginates through all transactions (limit=100 per page)
    - Deduplicates by signature|owner
@@ -88,8 +88,7 @@ Each row represents a balance change within a transaction.
 Files:
 - `manifest.json` - Extension manifest (MV3)
 - `background.js` - Service worker (export logic)
-- `content.js` - Content script (bridge injector)
-- `bridge.js` - Page-world script (header capture)
+- `content.js` - Content script (injects inline bridge code for header capture)
 - `popup.html/js/css` - Extension popup UI
 - `offscreen.html/js` - Offscreen document (Blob API)
 
