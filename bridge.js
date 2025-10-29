@@ -11,29 +11,36 @@ window.fetch = function(...args) {
   if (url && url.includes("portfolio-api-jup.sonar.watch")) {
     console.log("[bridge] 🔍 Portfolio API fetch detected!");
     console.log("[bridge] URL:", url);
-    console.log("[bridge] Raw init object:", init);
-    console.log("[bridge] init type:", typeof init);
-    console.log("[bridge] init?.headers:", init?.headers);
-    console.log("[bridge] headers type:", typeof init?.headers);
+    console.log("[bridge] resource type:", typeof resource);
+    console.log("[bridge] resource instanceof Request:", resource instanceof Request);
     
-    if (init?.headers) {
-      if (init.headers instanceof Headers) {
-        console.log("[bridge] Headers is a Headers object");
-        const entries = [...init.headers.entries()];
-        console.log("[bridge] Headers entries:", entries);
-      } else {
-        console.log("[bridge] Headers is a plain object:", init.headers);
-      }
-    } else {
-      console.log("[bridge] ⚠️ No headers found in init object!");
+    if (resource instanceof Request) {
+      console.log("[bridge] ✅ Resource is a Request object!");
+      console.log("[bridge] Request.headers:", resource.headers);
+      const entries = [...resource.headers.entries()];
+      console.log("[bridge] Request headers entries:", entries);
     }
+    
+    console.log("[bridge] Raw init object:", init);
+    console.log("[bridge] init?.headers:", init?.headers);
   }
 
   if (url && url.includes("portfolio-api-jup.sonar.watch/v1/transactions/fetch")) {
-    const headers = init?.headers || {};
-    const headerMap = headers instanceof Headers ? 
-      Object.fromEntries([...headers.entries()]) : 
-      (headers || {});
+    // Extract headers from Request object OR init parameter
+    let headerMap = {};
+    
+    if (resource instanceof Request && resource.headers) {
+      // Headers are in the Request object
+      console.log("[bridge] Extracting headers from Request object");
+      headerMap = Object.fromEntries([...resource.headers.entries()]);
+    } else if (init?.headers) {
+      // Headers are in init parameter
+      console.log("[bridge] Extracting headers from init object");
+      const headers = init.headers;
+      headerMap = headers instanceof Headers ? 
+        Object.fromEntries([...headers.entries()]) : 
+        headers;
+    }
 
     console.log("[bridge] Converted headerMap:", headerMap);
 
@@ -45,7 +52,7 @@ window.fetch = function(...args) {
     console.log("[bridge] Extracted - turnstile:", turnstile ? "✅ FOUND" : "❌ MISSING");
 
     if (auth && turnstile && !captured) {
-      console.log("[bridge] ✅ Captured headers from fetch");
+      console.log("[bridge] ✅✅✅ SUCCESSFULLY CAPTURED HEADERS! ✅✅✅");
       captured = true;
       
       window.postMessage({

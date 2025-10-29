@@ -1,3 +1,4 @@
+
 console.log("[content] Jupiter Export content script loaded");
 
 const script = document.createElement("script");
