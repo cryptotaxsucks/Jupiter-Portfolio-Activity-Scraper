@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Jupiter Portfolio Full CSV Export",
+  "version": "5.0.0",
+  "description": "Export all Jupiter Portfolio transactions to CSV without clicking. Runs in background even if popup closes.",
+  "permissions": [
+    "downloads",
+    "storage",
+    "notifications",
+    "scripting",
+    "activeTab",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://jup.ag/*",
+    "https://*.jup.ag/*",
+    "https://portfolio-api-jup.sonar.watch/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Jupiter Export"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://jup.ag/*", "https://*.jup.ag/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["bridge.js"],
+      "matches": ["https://jup.ag/*", "https://*.jup.ag/*"]
+    }
+  ]
+}

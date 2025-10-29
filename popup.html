@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Jupiter Export</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>Jupiter – Full CSV Export</h1>
+  <label>Wallet Address (leave empty to auto-detect from current tab):</label>
+  <input id="addr" type="text" placeholder="...">
+  <div style="display:flex; gap:8px; align-items:center;">
+    <div style="flex:1">
+      <label>Page size (30–100)</label>
+      <input id="limit" type="number" min="30" max="100" value="100">
+    </div>
+    <div style="flex:1">
+      <label>&nbsp;</label>
+      <button id="go" title="Start export">Export Full CSV</button>
+    </div>
+  </div>
+  <div style="margin-top:12px; display:flex; gap:8px;">
+    <button id="diagnostics" style="flex:1; background:#2a3345; font-size:11px; padding:6px;">Diagnostics</button>
+  </div>
+  <pre id="status"></pre>
+  <small>Tip: If headers aren't captured yet, click "Load more" once on the site and try again.</small>
+  <script src="popup.js"></script>
+</body>
+</html>
