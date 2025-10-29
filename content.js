@@ -1,6 +1,12 @@
 console.log("[content] Jupiter Export content script loaded");
 
-chrome.runtime.sendMessage({ cmd: "injectBridge" }).catch(() => {});
+const script = document.createElement("script");
+script.src = chrome.runtime.getURL("bridge.js");
+script.onload = () => {
+  script.remove();
+  console.log("[content] Bridge script injected");
+};
+(document.head || document.documentElement).prepend(script);
 
 window.addEventListener("message", (e) => {
   if (e.source !== window) return;
