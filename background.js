@@ -122,23 +122,27 @@ async function runExport({ tabId, address, limit = 100 }) {
   await ensureOffscreen();
   await createProgressNotification();
 
-  const { jupHeaders } = await chrome.storage.local.get("jupHeaders");
-  if (!jupHeaders?.authorization || !jupHeaders?.xturnstile) {
-    throw new Error("Missing headers. Click 'Load more' once on the site, then try again.");
+  let currentHeaders = null;
+  
+  async function refreshHeaders() {
+    const { jupHeaders } = await chrome.storage.local.get("jupHeaders");
+    if (!jupHeaders?.authorization || !jupHeaders?.xturnstile) {
+      throw new Error("Missing headers. Click 'Load more' once on the site, then try again.");
+    }
+    currentHeaders = {
+      "accept": "application/json",
+      "authorization": jupHeaders.authorization,
+      "x-turnstile-token": jupHeaders.xturnstile
+    };
+    console.log("[bg] Headers refreshed from storage");
   }
 
-  console.log("[bg] Headers loaded from storage");
-
-  const headers = {
-    "accept": "application/json",
-    "authorization": jupHeaders.authorization,
-    "x-turnstile-token": jupHeaders.xturnstile
-  };
+  await refreshHeaders();
 
   async function safeFetch(url) {
     return withBackoff(async () => {
       const res = await fetch(url, {
-        headers,
+        headers: currentHeaders,
         credentials: "omit",
         mode: "cors"
       });
@@ -188,11 +192,20 @@ async function runExport({ tabId, address, limit = 100 }) {
 
   while (true) {
     page++;
+    
+    if (page % 30 === 0) {
+      console.log(`[bg] Refreshing headers at page ${page}`);
+      await refreshHeaders();
+    }
+    
+    const startTime = Date.now();
     console.log(`[bg] Fetching page ${page}, before=${before || 'null'}`);
     
     const res = await safeFetch(buildUrl(before));
     const data = await res.json().catch(() => ({}));
     const txs = Array.isArray(data) ? data : (data?.transactions || []);
+    
+    const fetchTime = Date.now() - startTime;
     
     if (!txs.length) {
       console.log(`[bg] No more transactions, stopping at page ${page}`);
@@ -214,14 +227,19 @@ async function runExport({ tabId, address, limit = 100 }) {
     }
 
     const beforeCount = allTxs.length;
+    let duplicates = 0;
     for (const tx of txs) {
       const key = `${tx.signature}|${tx.owner}`;
       if (!seen.has(key)) {
         seen.add(key);
         allTxs.push(tx);
+      } else {
+        duplicates++;
       }
     }
     const newCount = allTxs.length - beforeCount;
+
+    console.log(`[bg] Page ${page}: ${txs.length} returned, ${newCount} new, ${duplicates} duplicates, total=${allTxs.length}, fetch took ${fetchTime}ms`);
 
     if (newCount === 0) {
       console.log(`[bg] No new transactions found on page ${page}, all ${txs.length} were duplicates. Export complete.`);
@@ -238,8 +256,7 @@ async function runExport({ tabId, address, limit = 100 }) {
       total: allTxs.length
     }).catch(() => {});
 
-    await reportProgress(`Fetched page ${page} (+${newCount}, total ${allTxs.length})`);
-    await sleep(120);
+    await reportProgress(`Page ${page}: ${allTxs.length} total (${fetchTime}ms)`);
   }
 
   console.log(`[bg] Export complete: ${allTxs.length} transactions across ${page} pages`);
