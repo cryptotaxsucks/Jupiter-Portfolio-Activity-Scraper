@@ -81,12 +81,9 @@ def main():
     # Parse the headers
     parsed_headers = parse_headers_block(headers_text)
     
-    # Extract required headers
+    # Extract required headers (only auth and turnstile - like the Chrome extension does)
     auth_token = parsed_headers.get('authorization', '')
     turnstile_token = parsed_headers.get('x-turnstile-token', '')
-    origin = parsed_headers.get('origin', 'https://jup.ag')
-    referer = parsed_headers.get('referer', 'https://jup.ag/')
-    user_agent = parsed_headers.get('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
     
     if not auth_token:
         print("\nError: Could not find 'authorization' header in the pasted text")
@@ -101,22 +98,18 @@ def main():
     print("✓ Headers parsed successfully!")
     print(f"  Authorization: {auth_token[:30]}...")
     print(f"  Turnstile: {turnstile_token[:30]}...")
-    print(f"  Origin: {origin}")
-    print(f"  Referer: {referer}")
     print("="*80)
     print()
     print("Starting Export...")
     print("="*80)
     print()
     
-    # Build headers with all required fields
+    # Build headers - ONLY send the 3 headers that work in the Chrome extension
+    # Adding browser fingerprint headers like origin/referer/user-agent causes auth failures
     headers = {
-        "authorization": auth_token,
-        "x-turnstile-token": turnstile_token,
         "accept": "application/json",
-        "origin": origin,
-        "referer": referer,
-        "user-agent": user_agent
+        "authorization": auth_token,
+        "x-turnstile-token": turnstile_token
     }
     
     # Fetch transactions
