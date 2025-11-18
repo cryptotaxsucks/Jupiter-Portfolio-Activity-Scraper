@@ -52,6 +52,18 @@ class HeaderCapture:
         print("\nWaiting for page to load...")
         time.sleep(3)
         
+        # CRITICAL: Click the Activity tab first (page defaults to Positions tab)
+        if not captured:
+            print("\nClicking 'Activity' tab...")
+            try:
+                activity_tab = self.page.locator("text=Activity").first
+                if activity_tab.is_visible(timeout=5000):
+                    activity_tab.click()
+                    print("✓ Clicked 'Activity' tab, waiting for initial load...")
+                    time.sleep(3)
+            except Exception as e:
+                print(f"⚠ Could not find 'Activity' tab: {e}")
+        
         if not captured:
             print("\nHeaders not captured yet. Clicking 'Load more' button...")
             try:
