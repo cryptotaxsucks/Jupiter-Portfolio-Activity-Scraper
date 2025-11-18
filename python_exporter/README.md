@@ -1,21 +1,48 @@
 # Jupiter Portfolio Python Exporter
 
-A Python script that automatically exports all Jupiter Portfolio transactions to CSV format. This is an alternative to the Chrome extension that may be faster for large datasets.
+A Python script that exports all Jupiter Portfolio transactions to CSV format. Faster and more reliable than the Chrome extension for large datasets.
 
-## Features
+## Quick Start (Easiest Method)
 
-- **Automatic header capture**: Uses Playwright to automatically capture authentication tokens
-- **Fast API pagination**: Direct API calls without browser overhead
-- **Resume capability**: Save captured headers and reuse them for multiple exports
-- **Progress tracking**: Real-time progress with timing information
-- **CSV format**: Matches Jupiter's official export format with deduplication
+**For environments without browser support (like Replit) or the simplest experience:**
 
-## Requirements
+```bash
+cd python_exporter
+pip install requests pandas
+python simple_export.py
+```
+
+You'll be prompted to:
+1. Enter your wallet address
+2. Paste your authorization token
+3. Paste your x-turnstile-token
+
+Then it automatically exports everything to CSV!
+
+### How to Get Your Tokens (30 seconds)
+
+1. Open `https://jup.ag/portfolio/YOUR_WALLET_ADDRESS` in your browser
+2. Press **F12** to open Developer Tools
+3. Click the **Network** tab
+4. Click **Load more** on Jupiter's page
+5. Find a request to `portfolio-api-jup.sonar.watch` 
+6. Click it → **Headers** tab → **Request Headers**
+7. Copy the `authorization` and `x-turnstile-token` values
+
+That's it!
+
+---
+
+## Advanced: Automatic Mode (Requires Browser Dependencies)
+
+If you're on a local machine with full browser support, you can use automatic header capture:
+
+### Requirements
 
 - Python 3.11+
-- Playwright (automatically installs Chromium browser)
+- Playwright with Chromium browser
 
-## Installation
+### Installation
 
 1. Install dependencies:
    ```bash
