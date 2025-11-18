@@ -75,9 +75,9 @@ The browser will:
 3. Capture your authentication tokens
 4. Download all transactions to CSV
 
-### Option B: Simple Mode (Manual Token Input)
+### Option B: Simple Mode (Manual Token Input) - RECOMMENDED
 
-If the automatic mode doesn't work, use simple mode:
+**This is the most reliable method, especially if Cloudflare blocks automated browsers.**
 
 ```powershell
 python simple_export.py
@@ -87,6 +87,12 @@ You'll be prompted to:
 1. Enter wallet address
 2. Paste authorization token (from browser DevTools)
 3. Paste turnstile token (from browser DevTools)
+
+**How to paste in PowerShell:**
+- **Right-click** in the PowerShell window to paste
+- Or use **Ctrl+V** (if enabled in your PowerShell settings)
+
+**Security Note:** Your tokens will be visible on screen when you paste them. Only run this in a trusted environment.
 
 See the main README.md for instructions on finding these tokens.
 

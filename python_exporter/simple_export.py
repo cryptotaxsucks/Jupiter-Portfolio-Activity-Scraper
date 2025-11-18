@@ -5,7 +5,6 @@ Just paste your auth tokens and get a CSV - no browser automation needed!
 """
 
 import sys
-import getpass
 from api_client import JupiterAPIClient
 from csv_exporter import CSVExporter
 
@@ -39,7 +38,8 @@ def main():
     # Get authorization token
     print("Step 3: Paste the 'authorization' token")
     print("(It should start with 'Bearer ...')")
-    auth_token = getpass.getpass("authorization: ").strip()
+    print("Tip: Right-click in PowerShell to paste")
+    auth_token = input("authorization: ").strip()
     
     if not auth_token:
         print("Error: Authorization token is required")
@@ -54,7 +54,8 @@ def main():
     # Get turnstile token
     print("Step 4: Paste the 'x-turnstile-token'")
     print("(A long random string)")
-    turnstile_token = getpass.getpass("x-turnstile-token: ").strip()
+    print("Tip: Right-click in PowerShell to paste")
+    turnstile_token = input("x-turnstile-token: ").strip()
     
     if not turnstile_token:
         print("Error: Turnstile token is required")
