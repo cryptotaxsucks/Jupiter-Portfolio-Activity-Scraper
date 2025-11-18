@@ -81,9 +81,11 @@ def main():
     # Parse the headers
     parsed_headers = parse_headers_block(headers_text)
     
-    # Extract required headers (only auth and turnstile - like the Chrome extension does)
+    # Extract required headers (auth, turnstile, and user-agent)
+    # The Turnstile token is bound to the browser's User-Agent, so we must send it
     auth_token = parsed_headers.get('authorization', '')
     turnstile_token = parsed_headers.get('x-turnstile-token', '')
+    user_agent = parsed_headers.get('user-agent', '')
     
     if not auth_token:
         print("\nError: Could not find 'authorization' header in the pasted text")
@@ -93,23 +95,29 @@ def main():
         print("\nError: Could not find 'x-turnstile-token' header in the pasted text")
         sys.exit(1)
     
+    if not user_agent:
+        print("\nError: Could not find 'user-agent' header in the pasted text")
+        sys.exit(1)
+    
     print()
     print("="*80)
     print("✓ Headers parsed successfully!")
     print(f"  Authorization: {auth_token[:30]}...")
     print(f"  Turnstile: {turnstile_token[:30]}...")
+    print(f"  User-Agent: {user_agent[:50]}...")
     print("="*80)
     print()
     print("Starting Export...")
     print("="*80)
     print()
     
-    # Build headers - ONLY send the 3 headers that work in the Chrome extension
-    # Adding browser fingerprint headers like origin/referer/user-agent causes auth failures
+    # Build headers - send the headers required for Turnstile validation
+    # The Turnstile token is bound to the User-Agent, so we must send exactly what the browser sent
     headers = {
         "accept": "application/json",
         "authorization": auth_token,
-        "x-turnstile-token": turnstile_token
+        "x-turnstile-token": turnstile_token,
+        "user-agent": user_agent
     }
     
     # Fetch transactions
