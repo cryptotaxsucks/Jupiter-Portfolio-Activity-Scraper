@@ -8,3 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Python exporter
+python_exporter/__pycache__/
+python_exporter/*.csv
+python_exporter/.playwright/
+python_exporter/venv/
+
+# Chrome extension temp files
+.DS_Store
+*.log
