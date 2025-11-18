@@ -52,6 +52,9 @@ class HeaderCapture:
         print("\nWaiting for page to load...")
         time.sleep(3)
         
+        # Check for Cloudflare challenge and wait for user to complete it
+        self._wait_for_cloudflare_challenge()
+        
         # CRITICAL: Click the Activity tab first (page defaults to Positions tab)
         if not captured:
             print("\nClicking 'Activity' tab...")
@@ -91,6 +94,49 @@ class HeaderCapture:
         
         return self.captured_headers
     
+    def _wait_for_cloudflare_challenge(self):
+        """Detect and wait for Cloudflare challenge to be completed by user."""
+        if not self.page:
+            return
+            
+        max_wait = 60
+        check_interval = 2
+        
+        for i in range(0, max_wait, check_interval):
+            try:
+                cloudflare_indicators = [
+                    "text=Proof of humanity required",
+                    "text=Verifying",
+                    "text=Checking your browser"
+                ]
+                
+                cloudflare_detected = False
+                for indicator in cloudflare_indicators:
+                    try:
+                        if self.page.locator(indicator).is_visible(timeout=1000):
+                            cloudflare_detected = True
+                            break
+                    except:
+                        continue
+                
+                if cloudflare_detected:
+                    if i == 0:
+                        print("\n" + "="*80)
+                        print("⏳ CLOUDFLARE CHALLENGE DETECTED")
+                        print("="*80)
+                        print("Please complete the verification in the browser window.")
+                        print("The script will automatically continue once you're done...")
+                        print("="*80 + "\n")
+                    
+                    time.sleep(check_interval)
+                else:
+                    if i > 0:
+                        print("✓ Cloudflare challenge completed! Continuing...\n")
+                    break
+                    
+            except Exception as e:
+                break
+        
     def close(self):
         if self.page:
             self.page.close()
