@@ -9,35 +9,25 @@ from api_client import JupiterAPIClient
 from csv_exporter import CSVExporter
 
 def parse_headers_block(headers_text):
-    """Parse the entire request headers block from DevTools into a dict."""
+    """Parse the entire request headers block from DevTools into a dict.
+    
+    Chrome DevTools formats headers as alternating lines:
+    Line 1: header name
+    Line 2: header value
+    Line 3: next header name
+    Line 4: next header value
+    etc.
+    """
     headers = {}
     
-    lines = headers_text.strip().split('\n')
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-        
-        # Skip empty lines
-        if not line:
-            i += 1
-            continue
-        
-        # Check if this line looks like a header name (no spaces, ends with nothing or has value on same line)
-        if ':' not in line and i + 1 < len(lines):
-            # Header name on one line, value on next
-            header_name = line.lower()
-            i += 1
-            header_value = lines[i].strip()
-            headers[header_name] = header_value
-        elif line.count(':') >= 1:
-            # Header name and value on same line (handle cases with multiple colons)
-            parts = line.split(':', 1)
-            if len(parts) == 2:
-                header_name = parts[0].strip().lower()
-                header_value = parts[1].strip()
-                headers[header_name] = header_value
-        
-        i += 1
+    # Split into lines and remove empty ones
+    lines = [line.strip() for line in headers_text.strip().split('\n') if line.strip()]
+    
+    # Process pairs of lines: name, value, name, value, ...
+    for i in range(0, len(lines) - 1, 2):
+        header_name = lines[i].lower()
+        header_value = lines[i + 1]
+        headers[header_name] = header_value
     
     return headers
 
