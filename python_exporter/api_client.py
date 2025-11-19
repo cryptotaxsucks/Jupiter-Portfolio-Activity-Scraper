@@ -1,4 +1,4 @@
-import requests
+from curl_cffi import requests
 import time
 from typing import Optional, Dict, List
 
@@ -22,7 +22,8 @@ class JupiterAPIClient:
         response = self.session.get(
             self.API_BASE,
             params=params,
-            timeout=30
+            timeout=30,
+            impersonate="chrome"
         )
         
         if response.status_code == 401 or response.status_code == 403:
