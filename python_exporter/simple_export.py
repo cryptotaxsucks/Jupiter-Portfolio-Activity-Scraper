@@ -59,7 +59,7 @@ def main():
     print("8. Select ALL the request headers text and copy it")
     print()
     print("Step 3: Paste ALL the request headers below")
-    print("(Right-click to paste, then press Enter, then Ctrl+D when done)")
+    print("(Right-click to paste, then press Enter, then Ctrl+Z + Enter when done)")
     print()
     print("Paste headers here:")
     
@@ -81,11 +81,14 @@ def main():
     # Parse the headers
     parsed_headers = parse_headers_block(headers_text)
     
-    # Extract required headers (auth, turnstile, and user-agent)
-    # The Turnstile token is bound to the browser's User-Agent, so we must send it
-    auth_token = parsed_headers.get('authorization', '')
-    turnstile_token = parsed_headers.get('x-turnstile-token', '')
-    user_agent = parsed_headers.get('user-agent', '')
+    # Filter out pseudo-headers (those starting with :) - they're not real HTTP headers
+    # and the requests library handles them automatically
+    headers = {k: v for k, v in parsed_headers.items() if not k.startswith(':')}
+    
+    # Verify we have the critical headers
+    auth_token = headers.get('authorization', '')
+    turnstile_token = headers.get('x-turnstile-token', '')
+    user_agent = headers.get('user-agent', '')
     
     if not auth_token:
         print("\nError: Could not find 'authorization' header in the pasted text")
@@ -102,6 +105,7 @@ def main():
     print()
     print("="*80)
     print("✓ Headers parsed successfully!")
+    print(f"  Total headers captured: {len(headers)}")
     print(f"  Authorization: {auth_token[:30]}...")
     print(f"  Turnstile: {turnstile_token[:30]}...")
     print(f"  User-Agent: {user_agent[:50]}...")
@@ -110,15 +114,6 @@ def main():
     print("Starting Export...")
     print("="*80)
     print()
-    
-    # Build headers - send the headers required for Turnstile validation
-    # The Turnstile token is bound to the User-Agent, so we must send exactly what the browser sent
-    headers = {
-        "accept": "application/json",
-        "authorization": auth_token,
-        "x-turnstile-token": turnstile_token,
-        "user-agent": user_agent
-    }
     
     # Fetch transactions
     try:
