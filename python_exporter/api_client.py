@@ -68,80 +68,150 @@ class JupiterAPIClient:
                 # Re-raise other connection errors
                 raise
     
-    def fetch_all_transactions(self, address: str, limit: int = 100, progress_callback=None):
+    def fetch_all_transactions(self, address: str, limit: int = 100, 
+                                start_date: str = None, end_date: str = None,
+                                resume_from: str = None, auto_save_callback=None,
+                                progress_callback=None):
+        """Fetch all transactions with optional date filtering and auto-save.
+        
+        Args:
+            address: Wallet address
+            limit: Transactions per page (max 100)
+            start_date: Start date in YYYY-MM-DD format (inclusive, transactions after this date)
+            end_date: End date in YYYY-MM-DD format (inclusive, transactions before this date)
+            resume_from: Transaction signature to resume from
+            auto_save_callback: Callback function(transactions, token_symbols, last_sig) called every 10 pages
+            progress_callback: Progress callback function
+        """
+        from datetime import datetime as dt
+        
         all_transactions = []
         seen_signatures = set()
         token_symbols = {}
-        before = None
+        before = resume_from
         page = 0
         last_fetch_time = 0
         
+        # Parse date filters if provided
+        start_timestamp = None
+        end_timestamp = None
+        if start_date:
+            start_timestamp = int(dt.strptime(start_date, "%Y-%m-%d").timestamp())
+        if end_date:
+            # Add one day to make it inclusive of the end date
+            end_timestamp = int(dt.strptime(end_date, "%Y-%m-%d").timestamp()) + 86400
+        
         print(f"\nFetching transactions for {address}...")
         print(f"Using page size: {limit}")
+        if resume_from:
+            print(f"Resuming from: {resume_from[:20]}...")
         print("-" * 80)
         
-        while True:
-            page += 1
-            start_time = time.time()
-            
-            # Adaptive timeout: use 1.5x the previous page's fetch time, clamped to 30-120s
-            adaptive_timeout = 30
-            if last_fetch_time > 0:
-                adaptive_timeout = max(30, min(120, int(last_fetch_time * 1.5)))
-            
-            try:
-                data = self.fetch_page(address, limit, before, timeout=adaptive_timeout)
-            except Exception as e:
-                print(f"\n✗ Error on page {page}: {e}")
-                raise
-            
-            fetch_time = (time.time() - start_time) * 1000
-            last_fetch_time = fetch_time / 1000  # Convert to seconds for next iteration
-            
-            transactions = data.get("transactions", [])
-            if not transactions:
-                print(f"\n✓ No more transactions. Stopping at page {page}")
-                break
-            
-            token_info = data.get("tokenInfo", {})
-            for mint, info in token_info.items():
-                symbol = info.get("symbol")
-                if not symbol and isinstance(info, dict):
-                    for value in info.values():
-                        if isinstance(value, dict) and value.get("symbol"):
-                            symbol = value["symbol"]
-                            break
-                if symbol:
-                    token_symbols[mint] = symbol
-            
-            before_count = len(all_transactions)
-            duplicates = 0
-            
-            for tx in transactions:
-                sig = tx.get("signature")
-                owner = tx.get("owner")
-                key = f"{sig}|{owner}"
+        try:
+            while True:
+                page += 1
+                start_time = time.time()
                 
-                if key not in seen_signatures:
-                    seen_signatures.add(key)
-                    all_transactions.append(tx)
-                else:
-                    duplicates += 1
-            
-            new_count = len(all_transactions) - before_count
-            
-            print(f"Page {page:3d}: {len(transactions):3d} returned, {new_count:3d} new, "
-                  f"{duplicates:3d} dupes, total={len(all_transactions):5d}, "
-                  f"fetch={fetch_time:6.0f}ms")
-            
-            if new_count == 0:
-                print(f"\n✓ All transactions were duplicates. Export complete.")
-                break
-            
-            before = transactions[-1].get("signature")
-            
-            if progress_callback:
-                progress_callback(page, len(all_transactions), new_count)
+                # Adaptive timeout: use 1.5x the previous page's fetch time, clamped to 30-120s
+                adaptive_timeout = 30
+                if last_fetch_time > 0:
+                    adaptive_timeout = max(30, min(120, int(last_fetch_time * 1.5)))
+                
+                try:
+                    data = self.fetch_page(address, limit, before, timeout=adaptive_timeout)
+                except Exception as e:
+                    print(f"\n✗ Error on page {page}: {e}")
+                    raise
+                
+                fetch_time = (time.time() - start_time) * 1000
+                last_fetch_time = fetch_time / 1000  # Convert to seconds for next iteration
+                
+                transactions = data.get("transactions", [])
+                if not transactions:
+                    print(f"\n✓ No more transactions. Stopping at page {page}")
+                    break
+                
+                token_info = data.get("tokenInfo", {})
+                for mint, info in token_info.items():
+                    symbol = info.get("symbol")
+                    if not symbol and isinstance(info, dict):
+                        for value in info.values():
+                            if isinstance(value, dict) and value.get("symbol"):
+                                symbol = value["symbol"]
+                                break
+                    if symbol:
+                        token_symbols[mint] = symbol
+                
+                before_count = len(all_transactions)
+                duplicates = 0
+                filtered_by_date = 0
+                
+                # Check date filtering on first transaction of the page
+                # Since transactions are newest-first, we can stop early
+                if end_timestamp and transactions:
+                    first_tx_time = transactions[0].get("blockTime", 0)
+                    if first_tx_time > end_timestamp:
+                        # All transactions on this page are too new, skip the page
+                        before = transactions[-1].get("signature")
+                        print(f"Page {page:3d}: Skipping (transactions too recent for date filter)")
+                        continue
+                
+                for tx in transactions:
+                    sig = tx.get("signature")
+                    owner = tx.get("owner")
+                    key = f"{sig}|{owner}"
+                    tx_time = tx.get("blockTime", 0)
+                    
+                    # Apply date filters
+                    if start_timestamp and tx_time < start_timestamp:
+                        # Transactions are ordered newest-first, so we can stop here
+                        print(f"\n✓ Reached start date limit. Stopping.")
+                        before = None  # Force loop to exit
+                        break
+                    
+                    if end_timestamp and tx_time > end_timestamp:
+                        filtered_by_date += 1
+                        continue
+                    
+                    if key not in seen_signatures:
+                        seen_signatures.add(key)
+                        all_transactions.append(tx)
+                    else:
+                        duplicates += 1
+                
+                new_count = len(all_transactions) - before_count
+                
+                print(f"Page {page:3d}: {len(transactions):3d} returned, {new_count:3d} new, "
+                      f"{duplicates:3d} dupes, total={len(all_transactions):5d}, "
+                      f"fetch={fetch_time:6.0f}ms", end="")
+                if filtered_by_date > 0:
+                    print(f", {filtered_by_date} filtered by date", end="")
+                print()
+                
+                if new_count == 0 and not before:
+                    print(f"\n✓ All transactions were duplicates or filtered. Export complete.")
+                    break
+                
+                # Auto-save after every page
+                if auto_save_callback:
+                    last_sig = transactions[-1].get("signature") if transactions else None
+                    if last_sig:
+                        auto_save_callback(all_transactions, dict(token_symbols), last_sig)
+                
+                if not before:  # Date filter triggered early exit
+                    break
+                    
+                before = transactions[-1].get("signature")
+                
+                if progress_callback:
+                    progress_callback(page, len(all_transactions), new_count)
+        
+        except KeyboardInterrupt:
+            print(f"\n\n⚠ Export interrupted by user at page {page}")
+            print(f"✓ Returning {len(all_transactions)} transactions collected so far")
+            # Store data in instance variable so caller can retrieve it
+            self._interrupted_data = (all_transactions, token_symbols)
+            raise
         
         print("-" * 80)
         print(f"✓ Export complete: {len(all_transactions)} unique transactions across {page} pages")
