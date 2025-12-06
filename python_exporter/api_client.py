@@ -152,6 +152,7 @@ class JupiterAPIClient:
                 before_count = len(all_transactions)
                 duplicates = 0
                 filtered_by_date = 0
+                reached_date_limit = False
                 
                 # Check date filtering on first transaction of the page
                 # Since transactions are newest-first, we can stop early
@@ -173,7 +174,7 @@ class JupiterAPIClient:
                     if start_timestamp and tx_time < start_timestamp:
                         # Transactions are ordered newest-first, so we can stop here
                         print(f"\n✓ Reached start date limit. Stopping.")
-                        before = None  # Force loop to exit
+                        reached_date_limit = True
                         break
                     
                     if end_timestamp and tx_time > end_timestamp:
@@ -205,10 +206,10 @@ class JupiterAPIClient:
                     if last_sig:
                         auto_save_callback(all_transactions, dict(token_symbols), last_sig)
                 
-                if not before:  # Date filter triggered early exit
-                    break
-                    
                 before = transactions[-1].get("signature")
+                
+                if reached_date_limit:  # Date filter triggered early exit
+                    break
                 
                 if progress_callback:
                     progress_callback(page, len(all_transactions), new_count)
