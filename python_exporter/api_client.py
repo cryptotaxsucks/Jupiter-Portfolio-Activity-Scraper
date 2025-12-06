@@ -71,7 +71,7 @@ class JupiterAPIClient:
     def fetch_all_transactions(self, address: str, limit: int = 100, 
                                 start_date: str = None, end_date: str = None,
                                 resume_from: str = None, auto_save_callback=None,
-                                progress_callback=None):
+                                progress_callback=None, stop_event=None):
         """Fetch all transactions with optional date filtering and auto-save.
         
         Args:
@@ -80,8 +80,9 @@ class JupiterAPIClient:
             start_date: Start date in YYYY-MM-DD format (inclusive, transactions after this date)
             end_date: End date in YYYY-MM-DD format (inclusive, transactions before this date)
             resume_from: Transaction signature to resume from
-            auto_save_callback: Callback function(transactions, token_symbols, last_sig) called every 10 pages
+            auto_save_callback: Callback function(transactions, token_symbols, last_sig) called every page
             progress_callback: Progress callback function
+            stop_event: threading.Event to signal early stop (for multi-wallet mode)
         """
         from datetime import datetime as dt
         
@@ -110,6 +111,12 @@ class JupiterAPIClient:
         try:
             while True:
                 page += 1
+                
+                if stop_event and stop_event.is_set():
+                    print(f"\n⚠ Stop signal received at page {page}")
+                    self._interrupted_data = (all_transactions, token_symbols)
+                    raise KeyboardInterrupt("Stop signal received")
+                
                 start_time = time.time()
                 
                 # Adaptive timeout: use 1.5x the previous page's fetch time, clamped to 30-120s
