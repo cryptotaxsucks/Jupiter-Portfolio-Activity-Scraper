@@ -48,94 +48,206 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Install the Chromium browser for automation:
+This installs `curl_cffi` which handles the Chrome-like browser fingerprinting needed for Jupiter's API.
 
-```powershell
-playwright install chromium
-```
+---
 
-## Step 4: Run the Exporter
+## Running the Exporter
 
-### Option A: Automatic Mode (Recommended)
+### Single Wallet: `simple_export.py`
 
-The script will open a browser, capture your authentication automatically:
-
-```powershell
-python main.py YOUR_WALLET_ADDRESS
-```
-
-Example:
-```powershell
-python main.py 3ShJGgszdh6M8VDxLeWqv2EyESNSxnnhopKq3V3vgnqT
-```
-
-The browser will:
-1. Open Jupiter Portfolio
-2. Click the "Activity" tab automatically
-3. Capture your authentication tokens
-4. Download all transactions to CSV
-
-### Option B: Simple Mode (Manual Token Input) - RECOMMENDED
-
-**This is the most reliable method, especially if Cloudflare blocks automated browsers.**
+For exporting one wallet at a time:
 
 ```powershell
 python simple_export.py
 ```
 
 You'll be prompted to:
-1. Enter wallet address
-2. Paste authorization token (from browser DevTools)
-3. Paste turnstile token (from browser DevTools)
+1. Enter your wallet address
+2. Paste the request headers from Chrome DevTools
 
-**How to paste in PowerShell:**
-- **Right-click** in the PowerShell window to paste
-- Or use **Ctrl+V** (if enabled in your PowerShell settings)
+### Multiple Wallets: `multi_export.py`
 
-**Security Note:** Your tokens will be visible on screen when you paste them. Only run this in a trusted environment.
+For exporting multiple wallets in parallel:
 
-See the main README.md for instructions on finding these tokens.
+```powershell
+python multi_export.py WALLET1 WALLET2 WALLET3
+```
+
+Replace `WALLET1`, `WALLET2`, `WALLET3` with your actual wallet addresses, separated by spaces.
+
+---
+
+## How to Get Request Headers from Chrome
+
+This is the critical step - you need to copy headers from your browser:
+
+1. Open Chrome and go to: `https://jup.ag/portfolio/YOUR_WALLET_ADDRESS`
+2. Press **F12** to open Developer Tools
+3. Click the **Network** tab at the top
+4. On the Jupiter page, click the **Activity** tab
+5. Click **"Load more"** to trigger a request
+6. In the Network panel, look for a request to `portfolio-api-jup.sonar.watch`
+7. Click on that request
+8. Click the **Headers** tab on the right
+9. Scroll down to **Request Headers**
+10. Select ALL the request headers text (from the first line to the last)
+11. **Right-click → Copy**
+
+### Pasting Headers in PowerShell
+
+1. **Right-click** in the PowerShell window to paste
+2. Press **Enter** after pasting
+3. Press **Ctrl+Z** then **Enter** to signal you're done
+
+**Note:** Don't worry about "pseudo-headers" (lines starting with `:` like `:authority`, `:method`, `:path`). The script automatically filters these out - just copy everything and paste it.
+
+---
+
+## Command Options
+
+### Date Filtering
+
+Export only transactions within a specific date range:
+
+```powershell
+# Single wallet with date range
+python simple_export.py --start-date 2024-01-01 --end-date 2024-12-31
+
+# Multiple wallets with date range
+python multi_export.py WALLET1 WALLET2 --start-date 2024-01-01 --end-date 2024-12-31
+
+# Just a start date (everything from that date onward)
+python simple_export.py --start-date 2024-01-01
+
+# Just an end date (everything up to that date)
+python simple_export.py --end-date 2024-06-30
+```
+
+**Date format:** `YYYY-MM-DD` (year-month-day)
+
+### Resume Interrupted Exports
+
+If an export gets interrupted, you can resume where you left off:
+
+```powershell
+# Resume single wallet (will prompt for wallet address)
+python simple_export.py --resume
+
+# Resume multiple wallets (MUST provide the same wallet list)
+python multi_export.py WALLET1 WALLET2 --resume
+```
+
+**Important:** When resuming multi-wallet exports, you must provide the same wallet addresses you used before. The script looks for `.resume-WALLET.json` files to know where to continue.
+
+### Parallel Processing (Multi-Wallet Only)
+
+Control how many wallets export simultaneously:
+
+```powershell
+# Export 3 wallets with 2 running in parallel (default)
+python multi_export.py WALLET1 WALLET2 WALLET3
+
+# Export with 3 parallel workers
+python multi_export.py WALLET1 WALLET2 WALLET3 --parallel 3
+```
+
+**Recommended:** 2-3 parallel max to avoid rate limiting.
+
+### Load Wallets from File
+
+Create a text file with one wallet address per line:
+
+```
+# wallets.txt
+ABC123...first_wallet
+DEF456...second_wallet
+GHI789...third_wallet
+```
+
+Then run:
+
+```powershell
+python multi_export.py --wallets-file wallets.txt
+```
+
+---
+
+## Output Files
+
+### Normal Export
+```
+all-activities-YOUR_WALLET.csv
+```
+
+### Interrupted Export
+```
+all-activities-YOUR_WALLET.partial.csv   (incomplete data)
+all-activities-YOUR_WALLET.backup.csv    (same as partial)
+.resume-YOUR_WALLET.json                 (resume checkpoint)
+```
+
+---
 
 ## Common Issues
 
-### "ModuleNotFoundError: No module named 'requests'"
+### "ModuleNotFoundError: No module named 'curl_cffi'"
 
 Run:
 ```powershell
-pip install requests
+pip install curl_cffi
 ```
 
-### Browser doesn't open or crashes
+### "Could not find 'authorization' header"
 
-Try running in visible mode (not headless):
+Make sure you:
+1. Copied ALL the request headers (not just a few lines)
+2. Copied from the correct request (must be to `portfolio-api-jup.sonar.watch`)
+3. Clicked "Load more" on Jupiter before copying headers
+
+### "Headers expired"
+
+The authentication tokens expire after about 30 minutes. Copy fresh headers and try again.
+
+### Export is very slow
+
+This is normal! Jupiter's API takes 30-40 seconds per page for historical data. For a wallet with 10,000 transactions:
+- 100 pages needed
+- ~1 hour total export time
+
+Use date filtering to speed things up if you don't need the full history.
+
+### Ctrl+C to Stop
+
+You can safely press **Ctrl+C** at any time to stop the export. Your progress will be saved and you can resume later with `--resume`.
+
+---
+
+## Complete Examples
+
+### Export 2024 transactions for tax purposes
 ```powershell
-python main.py YOUR_WALLET --no-headless
+python simple_export.py --start-date 2024-01-01 --end-date 2024-12-31
 ```
 
-### Headers not captured
-
-The script now automatically clicks the "Activity" tab. If it still fails:
-1. When the browser window opens, manually click "Activity" tab
-2. The script will wait 30 seconds for you to trigger a request
-
-### Exporting multiple wallets
-
-After capturing headers once, reuse them for other wallets:
-
+### Export multiple wallets for 2024
 ```powershell
-# First wallet - captures headers
-python main.py WALLET_1
-
-# Other wallets - reuses saved headers (faster)
-python main.py WALLET_2 --reuse-headers
-python main.py WALLET_3 --reuse-headers
+python multi_export.py WALLET1 WALLET2 WALLET3 --start-date 2024-01-01 --end-date 2024-12-31
 ```
 
-## Output
-
-Your CSV file will be saved as:
-```
-all-activities-YOUR_WALLET_ADDRESS.csv
+### Resume an interrupted multi-wallet export
+```powershell
+python multi_export.py WALLET1 WALLET2 WALLET3 --resume
 ```
 
-This matches Jupiter's official export format and can be imported directly into your accounting tools.
+### Full history export (may take hours for large wallets)
+```powershell
+python simple_export.py
+```
+
+---
+
+## Need Help?
+
+- **RELIABILITY_FEATURES.md** - Detailed documentation on auto-save, resume, and all reliability features
+- The script will guide you through each step when you run it
