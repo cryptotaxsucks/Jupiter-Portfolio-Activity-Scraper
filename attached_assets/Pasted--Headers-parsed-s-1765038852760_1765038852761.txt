@@ -1,0 +1,111 @@
+================================================================================
+✓ Headers parsed successfully!
+  Total headers captured: 9
+  Authorization: Bearer CGtF4EdvDbBpwUXmZSKW3Hs...
+  Turnstile: 0.1slN79Cwv83Zjou6VVqveI5WaVND...
+================================================================================
+
+Starting export of 3 wallet(s) with 2 parallel workers...
+
+================================================================================
+WALLET EXPORT STATUS
+================================================================================
+  ⋯ DbhC...b2xK: waiting
+  ⋯ FdxV...bjhe: waiting
+  ⋯ 2Dya...KfZV: waiting
+================================================================================
+
+Fetching transactions for DbhCrSFFK1S1h1pFNRp8iDwYLP2Wzfw32pbUCN9yb2xK...
+
+Fetching transactions for FdxVBfBnx8nXCcmVE6S9BfGLGnNozyuYk5pADm6Ubjhe...
+Using page size: 100
+Using page size: 100
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Page   1: 100 returned, 100 new,   0 dupes, total=  100, fetch=  1355ms
+
+Generating CSV...
+✓ CSV exported to all-activities-DbhCrSFFK1S1h1pFNRp8iDwYLP2Wzfw32pbUCN9yb2xK.backup.csv
+  Total rows: 101
+  Unique transactions: 100
+--------------------------------------------------------------------------------
+✓ Export complete: 100 unique transactions across 1 pages
+
+Generating CSV...
+✓ CSV exported to all-activities-DbhCrSFFK1S1h1pFNRp8iDwYLP2Wzfw32pbUCN9yb2xK.csv
+  Total rows: 101
+  Unique transactions: 100
+
+Fetching transactions for 2DyaHASEMx5QMdAyXqJw4bgR5xpHcHoQpupvRyvDKfZV...
+================================================================================
+WALLET EXPORT STATUS
+================================================================================
+  ✓ DbhC...b2xK: 100 txns in 1s
+  ⏳ FdxV...bjhe: 0 txns, page 0 (1s)
+  ⏳ 2Dya...KfZV: 0 txns, page 0 (0s)
+================================================================================
+
+Using page size: 100
+--------------------------------------------------------------------------------
+Page   1: 100 returned, 100 new,   0 dupes, total=  100, fetch=  2820ms
+
+Generating CSV...
+✓ CSV exported to all-activities-FdxVBfBnx8nXCcmVE6S9BfGLGnNozyuYk5pADm6Ubjhe.backup.csv
+  Total rows: 111
+  Unique transactions: 100
+--------------------------------------------------------------------------------
+✓ Export complete: 100 unique transactions across 1 pages
+
+Generating CSV...
+✓ CSV exported to all-activities-FdxVBfBnx8nXCcmVE6S9BfGLGnNozyuYk5pADm6Ubjhe.csv
+  Total rows: 111
+  Unique transactions: 100
+
+================================================================================
+WALLET EXPORT STATUS
+================================================================================
+  ✓ DbhC...b2xK: 100 txns in 1s
+  ✓ FdxV...bjhe: 100 txns in 3s
+  ⏳ 2Dya...KfZV: 0 txns, page 0 (1s)
+================================================================================
+Page   1: 100 returned, 100 new,   0 dupes, total=  100, fetch=  1560ms
+
+Generating CSV...
+✓ CSV exported to all-activities-2DyaHASEMx5QMdAyXqJw4bgR5xpHcHoQpupvRyvDKfZV.backup.csv
+  Total rows: 138
+  Unique transactions: 100
+--------------------------------------------------------------------------------
+✓ Export complete: 100 unique transactions across 1 pages
+
+Generating CSV...
+✓ CSV exported to all-activities-2DyaHASEMx5QMdAyXqJw4bgR5xpHcHoQpupvRyvDKfZV.csv
+  Total rows: 138
+  Unique transactions: 100
+
+================================================================================
+WALLET EXPORT STATUS
+================================================================================
+  ✓ DbhC...b2xK: 100 txns in 1s
+  ✓ FdxV...bjhe: 100 txns in 3s
+  ✓ 2Dya...KfZV: 100 txns in 2s
+================================================================================
+
+================================================================================
+WALLET EXPORT STATUS
+================================================================================
+  ✓ DbhC...b2xK: 100 txns in 1s
+  ✓ FdxV...bjhe: 100 txns in 3s
+  ✓ 2Dya...KfZV: 100 txns in 2s
+================================================================================
+
+================================================================================
+FINAL SUMMARY
+================================================================================
+
+Completed: 3/3
+Total transactions exported: 300
+
+Output files:
+  ✓ all-activities-DbhCrSFFK1S1h1pFNRp8iDwYLP2Wzfw32pbUCN9yb2xK.csv
+  ✓ all-activities-FdxVBfBnx8nXCcmVE6S9BfGLGnNozyuYk5pADm6Ubjhe.csv
+  ✓ all-activities-2DyaHASEMx5QMdAyXqJw4bgR5xpHcHoQpupvRyvDKfZV.csv
