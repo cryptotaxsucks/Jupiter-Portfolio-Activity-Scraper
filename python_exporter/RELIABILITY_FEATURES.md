@@ -251,6 +251,8 @@ jupiter_transactions_2025-11-19.csv          Complete export
 
 ## Complete Command Reference
 
+### Single Wallet Export (simple_export.py)
+
 ```powershell
 # Basic export
 python simple_export.py <wallet_address>
@@ -269,6 +271,38 @@ python simple_export.py <wallet_address> --end-date YYYY-MM-DD
 
 # Resume with date filter
 python simple_export.py <wallet_address> --resume --start-date YYYY-MM-DD
+```
+
+### Multi-Wallet Export (multi_export.py)
+
+```powershell
+# Export multiple wallets (2 parallel by default)
+python multi_export.py WALLET1 WALLET2 WALLET3
+
+# Export with 3 parallel workers
+python multi_export.py WALLET1 WALLET2 WALLET3 --parallel 3
+
+# Load wallets from a text file
+python multi_export.py --wallets-file wallets.txt
+
+# Combine file and command line wallets
+python multi_export.py WALLET1 --wallets-file more_wallets.txt
+
+# Multi-wallet with date filter
+python multi_export.py WALLET1 WALLET2 --start-date 2024-01-01
+
+# Resume all interrupted wallets
+python multi_export.py WALLET1 WALLET2 --resume
+```
+
+### Wallet File Format (wallets.txt)
+
+Create a text file with one wallet address per line:
+```
+ABC123...first_wallet_address
+DEF456...second_wallet_address
+GHI789...third_wallet_address
+# Lines starting with # are ignored (comments)
 ```
 
 ---
