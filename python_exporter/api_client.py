@@ -92,6 +92,7 @@ class JupiterAPIClient:
         before = resume_from
         page = 0
         last_fetch_time = 0
+        consecutive_dupe_pages = 0  # Track consecutive pages with all duplicates
         
         # Parse date filters if provided
         start_timestamp = None
@@ -196,9 +197,14 @@ class JupiterAPIClient:
                     print(f", {filtered_by_date} filtered by date", end="")
                 print()
                 
-                if new_count == 0 and not before:
-                    print(f"\n✓ All transactions were duplicates or filtered. Export complete.")
-                    break
+                # Track consecutive pages with all duplicates to detect infinite loop
+                if new_count == 0:
+                    consecutive_dupe_pages += 1
+                    if consecutive_dupe_pages >= 3:
+                        print(f"\n✓ {consecutive_dupe_pages} consecutive pages with no new transactions. Export complete.")
+                        break
+                else:
+                    consecutive_dupe_pages = 0  # Reset counter when we get new transactions
                 
                 # Auto-save after every page
                 if auto_save_callback:
