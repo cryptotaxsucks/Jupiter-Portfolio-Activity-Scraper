@@ -54,6 +54,20 @@ This installs `curl_cffi` which handles the Chrome-like browser fingerprinting n
 
 ## Running the Exporter
 
+### First: Open PowerShell and Navigate to the Folder
+
+1. Press **Windows key**, type **PowerShell**, and press Enter
+2. Navigate to the folder where you saved the exporter files:
+
+```powershell
+cd C:\Users\YOUR_NAME\Downloads\python_exporter
+```
+
+Replace `YOUR_NAME` with your actual Windows username. For example:
+```powershell
+cd C:\Users\matth\Downloads\python_exporter
+```
+
 ### Single Wallet: `simple_export.py`
 
 For exporting one wallet at a time:
