@@ -120,8 +120,8 @@ class MultiWalletExporter:
                 with self.lock:
                     status.transactions = len(transactions)
                     status.pages += 1
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"  [Auto-save error for {status.short_address}]: {e}")
         
         client = JupiterAPIClient(self.headers)
         transactions = []
@@ -147,6 +147,9 @@ class MultiWalletExporter:
             if hasattr(client, '_interrupted_data'):
                 transactions, token_symbols = client._interrupted_data
         except Exception as e:
+            print(f"\n✗ Error exporting {status.short_address}: {e}")
+            import traceback
+            traceback.print_exc()
             status.status = "error"
             status.error = str(e)[:50]
             status.end_time = time.time()
@@ -169,6 +172,9 @@ class MultiWalletExporter:
                 exporter.export_to_csv(transactions, final_file)
                 status.transactions = len(transactions)
             except Exception as e:
+                print(f"\n✗ Final CSV export error for {status.short_address}: {e}")
+                import traceback
+                traceback.print_exc()
                 status.error = str(e)[:50]
         
         if status.status != "interrupted" and status.status != "error":
@@ -208,6 +214,9 @@ class MultiWalletExporter:
                 try:
                     future.result()
                 except Exception as e:
+                    print(f"\n✗ Thread error for {self.statuses[wallet].short_address}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     self.statuses[wallet].status = "error"
                     self.statuses[wallet].error = str(e)[:50]
                 
